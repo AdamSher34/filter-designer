@@ -1,5 +1,6 @@
 import math
 from enum import Enum
+from component import VALUE_SEQUENCE as SEQ, find_match
 
 class FILTER_FAMILY(Enum):
     BUTTERWORTH = "butterworth"
@@ -25,29 +26,52 @@ class LowpassSallenKey:
     def __init__(self,
                  family: FILTER_FAMILY, 
                  order: int,
-                 cutoff: float,              # cutoff frequency fc in Hz
-                 gain_dc: float,             # DC gain K in V/V
-                 default_C: float = 10_000,  # default capacitance C in pF
-                 default_Rfb: float = 10_000, # default feedback resistance Rfb in Ohms
+                 cutoff: float,                 # cutoff frequency fc in Hz
+                 gain_dc: float,                # DC gain K in V/V
+                 sequence_R: SEQ = SEQ.EXACT,
+                 sequence_C: SEQ = SEQ.EXACT,
+                 default_R: float = None,       # default filter resistance R in Ohms
+                 default_C: float = 10_000,     # default filter capacitance C in pF
+                 default_Rfb: float = 10_000,   # default feedback resistance Rfb in Ohms
                  ):
         self.family = family.value
         self.order = order
         self.cutoff = cutoff
 
-        natural_freqs = tuple([cutoff * ratio for ratio in FREQUENCY_TABLE[family.value][order]])
+        natural_freqs = [cutoff * ratio for ratio in FREQUENCY_TABLE[family.value][order]]
         gains = GAIN_TABLE[family.value][order]
 
-        self.R_filter = tuple([10**12 / (2 * math.pi * f0 * default_C) for f0 in natural_freqs])
-        self.C_filter = tuple(order // 2 * [default_C])
-        self.R_feedback = [(default_Rfb * (k - 1), default_Rfb) for k in gains]
+        self.R_filter = []
+        self.C_filter = []
+        self.R_feedback = []
+
+        for stage in range(order // 2):
+            r, c = None, None
+            if default_R is not None:
+                r = find_match(default_R, sequence_R)
+                c = find_match(10**12 / (2 * math.pi * natural_freqs[stage] * r), sequence_C)
+            else:
+                c = find_match(default_C, sequence_C)
+                r = find_match(10**12 / (2 * math.pi * natural_freqs[stage] * c), sequence_R)
+            Rfb2 = find_match(default_Rfb, sequence_R)
+            Rfb1 = find_match(Rfb2 * (gains[stage] - 1), sequence_R)
+            self.R_filter.append(r)
+            self.C_filter.append(c)
+            self.R_feedback.append((Rfb1, Rfb2))
+            natural_freqs[stage] = 10**12 / (2 * math.pi * r * c)
 
         gain_last_stage = gain_dc
         for Rfb1, Rfb2 in self.R_feedback:
             gain_last_stage /= Rfb1 / Rfb2 + 1
-        self.R_feedback.append((default_Rfb * (gain_last_stage - 1), default_Rfb))
+        Rfb2 = find_match(default_Rfb, sequence_R)
+        Rfb1 = find_match(Rfb2 * (gain_last_stage - 1), sequence_R)
+        self.R_feedback.append((Rfb1, Rfb2))
+
+        self.R_filter = tuple(self.R_filter)
+        self.C_filter = tuple(self.C_filter)
         self.R_feedback = tuple(self.R_feedback)
 
-        self.natural_freqs = tuple([10**12 / (2 * math.pi * r * default_C) for r in self.R_filter])
+        self.natural_freqs = tuple(natural_freqs)
         self.gains = tuple([Rfb1 / Rfb2 + 1 for Rfb1, Rfb2 in self.R_feedback])
         self.gain_dc = 1
         for gain in self.gains:
@@ -55,7 +79,3 @@ class LowpassSallenKey:
         
         if family.value == "butterworth":
             self.cutoff = self.natural_freqs[0]
-        
-
-
-
