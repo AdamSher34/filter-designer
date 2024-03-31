@@ -7,14 +7,15 @@ def clear_console() -> None:
     system("cls")
 
 def get_family() -> FILTER_FAMILY:
-    printstr =  "Low-Pass Filter Designer v1.0\n"
+    printstr =  "Low-Pass Filter Designer v1.1\n"
     printstr += "-----------------------------\n\n"
     printstr += "Select the filter FAMILY:\n\n"
     printstr += "0.\tEXIT\n"
     printstr += "1.\tButterworth\n"
-    printstr += "2.\tChebyshev (0.5 dB ripple)\n"
-    printstr += "3.\tChebyshev (1.0 dB ripple)\n"
-    printstr += "4.\tChebyshev (3.0 dB ripple)\n\n: "
+    printstr += "2.\tChebyshev (0.1 dB ripple)\n"
+    printstr += "3.\tChebyshev (0.5 dB ripple)\n"
+    printstr += "4.\tChebyshev (1.0 dB ripple)\n"
+    printstr += "5.\tChebyshev (3.0 dB ripple)\n\n: "
     while True:
         clear_console()
         val = None
@@ -27,17 +28,19 @@ def get_family() -> FILTER_FAMILY:
         if val == 1:
             return FILTER_FAMILY.BUTTERWORTH
         if val == 2:
-            return FILTER_FAMILY.CHEBYSHEV_0_5dB
+            return FILTER_FAMILY.CHEBYSHEV_0_1dB
         if val == 3:
-            return FILTER_FAMILY.CHEBYSHEV_1dB
+            return FILTER_FAMILY.CHEBYSHEV_0_5dB
         if val == 4:
+            return FILTER_FAMILY.CHEBYSHEV_1dB
+        if val == 5:
             return FILTER_FAMILY.CHEBYSHEV_3dB
 
 def get_order() -> int:
-    printstr =  "Low-Pass Filter Designer v1.0\n"
+    printstr =  "Low-Pass Filter Designer v1.1\n"
     printstr += "-----------------------------\n\n"
     printstr += "Enter the filter ORDER:\n\n"
-    printstr += "Valid:\t2-6\n"
+    printstr += "Valid:\t1-10\n"
     printstr += "Exit:\t0\n\n: "
     while True:
         clear_console()
@@ -48,11 +51,11 @@ def get_order() -> int:
             continue
         if val == 0:
             exit()
-        if val in range(2, 7):
+        if val in range(1, 11):
             return val
         
 def get_cutoff() -> float:
-    printstr =  "Low-Pass Filter Designer v1.0\n"
+    printstr =  "Low-Pass Filter Designer v1.1\n"
     printstr += "-----------------------------\n\n"
     printstr += "Enter the CUTOFF FREQUENCY:\n\n"
     printstr += "Valid:\t<NUM> <UNIT>\n"
@@ -89,7 +92,7 @@ def get_cutoff() -> float:
             return num * 10**9
     
 def get_gain() -> float:
-    printstr =  "Low-Pass Filter Designer v1.0\n"
+    printstr =  "Low-Pass Filter Designer v1.1\n"
     printstr += "-----------------------------\n\n"
     printstr += "Enter the DC GAIN in V/V:\n\n"
     printstr += "Valid:\t<NUM>\n"
@@ -108,7 +111,7 @@ def get_gain() -> float:
             return val
         
 def get_sequence_R() -> SEQ:
-    printstr =  "Low-Pass Filter Designer v1.0\n"
+    printstr =  "Low-Pass Filter Designer v1.1\n"
     printstr += "-----------------------------\n\n"
     printstr += "Select the RESISTOR TOLERANCE:\n\n"
     printstr += "0.\tEXIT\n"
@@ -135,7 +138,7 @@ def get_sequence_R() -> SEQ:
             return sequences[val]
         
 def get_sequence_C() -> SEQ:
-    printstr =  "Low-Pass Filter Designer v1.0\n"
+    printstr =  "Low-Pass Filter Designer v1.1\n"
     printstr += "-----------------------------\n\n"
     printstr += "Select the CAPACITOR TOLERANCE:\n\n"
     printstr += "0.\tEXIT\n"
@@ -162,7 +165,7 @@ def get_sequence_C() -> SEQ:
             return sequences[val]
         
 def ask_using_default_R() -> bool:
-    printstr =  "Low-Pass Filter Designer v1.0\n"
+    printstr =  "Low-Pass Filter Designer v1.1\n"
     printstr += "-----------------------------\n\n"
     printstr += "Select the DEFAULT PASSIVE:\n\n"
     printstr += "0.\tEXIT\n"
@@ -183,7 +186,7 @@ def ask_using_default_R() -> bool:
             return False
 
 def get_default_R() -> float:
-    printstr =  "Low-Pass Filter Designer v1.0\n"
+    printstr =  "Low-Pass Filter Designer v1.1\n"
     printstr += "-----------------------------\n\n"
     printstr += "Enter the DEFAULT RESISTANCE:\n\n"
     printstr += "Valid:\t<NUM> <UNIT>\n"
@@ -220,7 +223,7 @@ def get_default_R() -> float:
             return num * 10**9
         
 def get_default_C() -> float:
-    printstr =  "Low-Pass Filter Designer v1.0\n"
+    printstr =  "Low-Pass Filter Designer v1.1\n"
     printstr += "-----------------------------\n\n"
     printstr += "Enter the DEFAULT CAPACITANCE:\n\n"
     printstr += "Valid:\t<NUM> <UNIT>\n"
@@ -259,7 +262,7 @@ def get_default_C() -> float:
             return num * 10**12
         
 def get_default_Rfb() -> float:
-    printstr =  "Low-Pass Filter Designer v1.0\n"
+    printstr =  "Low-Pass Filter Designer v1.1\n"
     printstr += "-----------------------------\n\n"
     printstr += "Enter the DEFAULT FEEDBACK RESISTANCE:\n\n"
     printstr += "Valid:\t<NUM> <UNIT>\n"
@@ -322,7 +325,7 @@ def format_value(value: float, units: tuple[str]):
     return f"{value} {units[-1]}"    
 
 def create_printstring(filter: LPF_SK) -> str:
-    printstr = f"""Low-Pass Filter Designer v1.0
+    printstr = f"""Low-Pass Filter Designer v1.1
 -----------------------------
 
 FILTER SUMMARY:
@@ -347,13 +350,32 @@ Feedback R1:\t{format_value(filter.R_feedback[stage_idx][0], ("Ω", "kΩ", "MΩ"
 Feedback R2:\t{format_value(filter.R_feedback[stage_idx][1], ("Ω", "kΩ", "MΩ", "GΩ"))}
 """
         
-    if filter.order % 2 == 0:
+    if filter.order % 2 == 0 and filter.using_voltage_divider:
+        printstr += f"""
+STAGE {filter.order // 2 + 1}: Voltage Divider
+-----------------------------
+DC Gain:\t{filter.gains[-1]:.2f} V/V
+Divider R1:\t{format_value(filter.R_feedback[-1][0], ("Ω", "kΩ", "MΩ", "GΩ"))}
+Divider R2:\t{format_value(filter.R_feedback[-1][1], ("Ω", "kΩ", "MΩ", "GΩ"))}\n\n"""
+        
+    elif filter.order % 2 == 0 and not filter.using_voltage_divider:
         printstr += f"""
 STAGE {filter.order // 2 + 1}: Gain Stage
 -----------------------------
 DC Gain:\t{filter.gains[-1]:.2f} V/V
 Feedback R1:\t{format_value(filter.R_feedback[-1][0], ("Ω", "kΩ", "MΩ", "GΩ"))}
 Feedback R2:\t{format_value(filter.R_feedback[-1][1], ("Ω", "kΩ", "MΩ", "GΩ"))}\n\n"""
+        
+    elif filter.order % 2 == 1 and filter.using_voltage_divider:
+        printstr += f"""
+STAGE {filter.order // 2 + 1}: Buffered RC with VD
+-----------------------------
+Natural Freq:\t{format_value(filter.natural_freqs[-1], ("Hz", "kHz", "MHz", "GHz"))}
+DC Gain:\t{filter.gains[-1]:.2f} V/V
+Filter R:\t{format_value(filter.R_filter[-1], ("Ω", "kΩ", "MΩ", "GΩ"))}
+Filter C:\t{format_value(filter.C_filter[-1], ("pF", "nF", "uF", "mF", "F"))}
+Divider R1:\t{format_value(filter.R_feedback[-1][0], ("Ω", "kΩ", "MΩ", "GΩ"))}
+Divider R2:\t{format_value(filter.R_feedback[-1][1], ("Ω", "kΩ", "MΩ", "GΩ"))}\n\n"""
         
     else:
         printstr += f"""
@@ -365,6 +387,7 @@ Filter R:\t{format_value(filter.R_filter[-1], ("Ω", "kΩ", "MΩ", "GΩ"))}
 Filter C:\t{format_value(filter.C_filter[-1], ("pF", "nF", "uF", "mF", "F"))}
 Feedback R1:\t{format_value(filter.R_feedback[-1][0], ("Ω", "kΩ", "MΩ", "GΩ"))}
 Feedback R2:\t{format_value(filter.R_feedback[-1][1], ("Ω", "kΩ", "MΩ", "GΩ"))}\n\n"""
+
     return printstr
 
 
@@ -373,9 +396,6 @@ def main():
     printstr = create_printstring(lpf)
     clear_console()
     print(printstr)
-    
-
-
 
         
 if __name__ == "__main__":
